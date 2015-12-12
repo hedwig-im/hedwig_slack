@@ -1,0 +1,2 @@
+defmodule HedwigSlack do
+end
