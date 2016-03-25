@@ -64,6 +64,11 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | users: Map.put(users, id, user)}}
   end
 
+  def handle_info(:connection_ready, %{robot: robot} = state) do
+    Hedwig.Robot.after_connect(robot)
+    {:noreply, state}
+  end
+
   def handle_info(msg, state) do
     IO.inspect msg
     {:noreply, state}

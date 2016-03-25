@@ -113,7 +113,8 @@ defmodule Hedwig.Adapters.Slack.Connection do
     {:noreply, state}
   end
 
-  defp handle_data(%{"type" => "hello"}, _owner) do
+  defp handle_data(%{"type" => "hello"}, owner) do
+    send(owner, :connection_ready)
     Logger.info "Connected Successfully!"
   end
 
