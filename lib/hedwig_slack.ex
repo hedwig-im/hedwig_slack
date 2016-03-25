@@ -22,7 +22,7 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   def handle_cast({:reply, %{user: user, text: text} = msg}, %{conn: conn, users: users} = state) do
-    msg = %{msg | text: "<@#{user}|#{users[user]}>: #{text}"}
+    msg = %{msg | text: "<@#{user}|#{users[user]["name"]}>: #{text}"}
     Connection.ws_send(conn, slack_message(msg))
     {:noreply, state}
   end
@@ -33,6 +33,9 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   def handle_info(%{"type" => "message"} = msg, %{conn: conn, robot: robot} = state) do
+    IO.inspect msg
+    IO.inspect state.users
+
     msg = %Hedwig.Message{
       adapter: {__MODULE__, self()},
       ref: make_ref(),
@@ -57,8 +60,8 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_info({:user, %{"id" => id, "name" => name}}, %{users: users} = state) do
-    {:noreply, %{state | users: Map.put(users, id, name)}}
+  def handle_info({:user, %{"id" => id} = user}, %{users: users} = state) do
+    {:noreply, %{state | users: Map.put(users, id, user)}}
   end
 
   def handle_info(msg, state) do

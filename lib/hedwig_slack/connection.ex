@@ -1,6 +1,8 @@
 defmodule Hedwig.Adapters.Slack.Connection do
   use GenServer
 
+  require Logger
+
   @endpoint "https://slack.com/api/rtm.start"
 
   defmodule State do
@@ -79,11 +81,26 @@ defmodule Hedwig.Adapters.Slack.Connection do
   end
 
   def handle_info({:gun_ws, conn, {:text, data}}, %{conn: conn} = state) do
+    send(self(), {:handle_data, Poison.decode!(data)})
+    {:noreply, state}
+  end
+
+  def handle_info({:handle_data, %{"type" => "reconnect_url", "url" => url} = msg}, state) do
+    {:noreply, %{state | reconnect_url: url}}
+  end
+
+  def handle_info({:handle_data, data}, state) do
     handle_data(data, state.owner)
     {:noreply, state}
   end
 
-  def handle_info({:gun_down, _conn, :http, :closed, [], []}, state) do
+  def handle_info({:gun_down, _conn, :http, _reason, _, _} = msg, state) do
+    IO.inspect msg
+    {:noreply, state}
+  end
+
+  def handle_info({:gun_down, _conn, :ws, _reason, _, _} = msg, state) do
+    IO.inspect msg
     {:noreply, state}
   end
 
@@ -96,8 +113,12 @@ defmodule Hedwig.Adapters.Slack.Connection do
     {:noreply, state}
   end
 
+  defp handle_data(%{"type" => "hello"}, _owner) do
+    Logger.info "Connected Successfully!"
+  end
+
   defp handle_data(data, owner) do
-    send(owner, Poison.decode!(data))
+    send(owner, data)
   end
 
   defp rtm_path(%{path: path, query: nil, token: token}), do:
