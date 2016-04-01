@@ -44,7 +44,9 @@ defmodule Hedwig.Adapters.Slack do
       type: msg["type"],
       user: msg["user"]
     }
-    Hedwig.Robot.handle_message(robot, msg)
+    if msg.text do
+      Hedwig.Robot.handle_message(robot, msg)
+    end
     {:noreply, state}
   end
 
