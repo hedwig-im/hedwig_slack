@@ -33,11 +33,7 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   def handle_info(%{"type" => "message"} = msg, %{conn: conn, robot: robot} = state) do
-    IO.inspect msg
-    IO.inspect state.users
-
     msg = %Hedwig.Message{
-      adapter: {__MODULE__, self()},
       ref: make_ref(),
       room: msg["channel"],
       text: msg["text"],

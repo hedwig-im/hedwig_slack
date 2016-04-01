@@ -16,7 +16,7 @@ defmodule HedwigSlack.Mixfile do
 
   defp deps do
     [{:gun, "1.0.0-pre.1"},
-     {:hedwig, "~> 1.0.0-rc3"},
+     {:hedwig, github: "hedwig-im/hedwig"},
      {:poison, "~> 2.0"}]
   end
 end
