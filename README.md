@@ -38,7 +38,7 @@ Add `hedwig_slack` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:hedwig_slack, github: "hedwig-im/hedwig_slack"}]
+  [{:hedwig_slack, "0.1"}]
 end
 ```
 
@@ -103,7 +103,6 @@ config :alfred, Alfred.Robot,
   aka: "/",
   responders: [
     {Hedwig.Responders.Help, []},
-    {Hedwig.Responders.Panzy, []},
     {Hedwig.Responders.GreatSuccess, []},
     {Hedwig.Responders.ShipIt, []}
   ]
@@ -137,7 +136,6 @@ config :alfred, Alfred.Robot,
   rooms: [],
   responders: [
     {Hedwig.Responders.Help, []},
-    {Hedwig.Responders.Panzy, []},
     {Hedwig.Responders.GreatSuccess, []},
     {Hedwig.Responders.ShipIt, []}
   ]
