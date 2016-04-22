@@ -1,6 +1,7 @@
-%{"cowlib": {:hex, :cowlib, "1.3.0"},
+%{"connection": {:hex, :connection, "1.0.2"},
+  "cowlib": {:hex, :cowlib, "1.3.0"},
   "gproc": {:hex, :gproc, "0.5.0"},
   "gun": {:hex, :gun, "1.0.0-pre.1"},
-  "hedwig": {:hex, :hedwig, "1.0.0-rc.4"},
+  "hedwig": {:git, "https://github.com/hedwig-im/hedwig.git", "2cf3ad2b881bdb81e7b2754d70ba1904e5c7a83e", []},
   "poison": {:hex, :poison, "2.1.0"},
   "ranch": {:hex, :ranch, "1.1.0"}}

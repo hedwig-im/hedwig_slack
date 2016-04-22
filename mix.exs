@@ -16,12 +16,13 @@ defmodule HedwigSlack.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :gun, :hedwig, :poison]]
+    [applications: [:logger, :connection, :gun, :hedwig, :poison]]
   end
 
   defp deps do
-    [{:gun, "1.0.0-pre.1"},
-     {:hedwig, "~> 1.0.0-rc.4"},
+    [{:connection, "~> 1.0"},
+     {:gun, "1.0.0-pre.1"},
+     {:hedwig, github: "hedwig-im/hedwig"},
      {:poison, "~> 2.0"}]
   end
 
