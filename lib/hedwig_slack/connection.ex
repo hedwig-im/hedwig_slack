@@ -159,11 +159,6 @@ defmodule Hedwig.Adapters.Slack.Connection do
     {:noreply, %{state | next_id: id + 1}}
   end
 
-  def handle_info(msg, %{robot: robot} = state) do
-    Hedwig.Robot.handle_in(robot, msg)
-    {:noreply, state}
-  end
-
   defp handle_data(%{"type" => "pong"}, _owner), do: :ok
 
   defp handle_data(%{"type" => "hello"}, owner) do
