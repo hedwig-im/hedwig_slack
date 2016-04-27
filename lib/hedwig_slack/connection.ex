@@ -8,11 +8,13 @@ defmodule Hedwig.Adapters.Slack.Connection do
 
   defstruct conn: nil,
             host: nil,
+            last_pong_ts: nil,
             next_id: 1,
             owner: nil,
             path: nil,
             port: nil,
             ref: nil,
+            timer: nil,
             token: nil,
             query: %{}
 
@@ -63,7 +65,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
   end
 
   def connect(:rtm_start, %{conn: conn, owner: owner} = state) do
-    info "RTM Start"
+    Logger.info "RTM Start"
     ref = :gun.get(conn, rtm_path(state))
 
     case :gun.await_body(conn, ref) do
@@ -95,8 +97,8 @@ defmodule Hedwig.Adapters.Slack.Connection do
         ref = :gun.ws_upgrade(conn, to_char_list(path))
         receive do
           {:gun_ws_upgrade, ^conn, :ok, _headers} ->
-            :timer.send_interval(30_000, :send_ping)
-            {:ok, %{state | conn: conn, ref: ref}}
+            {:ok, timer} = :timer.send_interval(30_000, :send_ping)
+            {:ok, %{state | conn: conn, ref: ref, timer: timer}}
         after @timeout ->
           {:backoff, @timeout, state}
         end
@@ -105,20 +107,31 @@ defmodule Hedwig.Adapters.Slack.Connection do
     end
   end
 
-  def disconnect({:close, from}, %{conn: conn} = state) do
+  def disconnect({:close, from}, %{conn: conn, timer: timer} = state) do
     :ok = :gun.close(conn)
+    {:ok, :cancel} = :timer.cancel(timer)
     Connection.reply(from, :ok)
-    {:stop, :normal, state}
+
+    {:stop, :normal, %{state | conn: nil,
+                               last_pong_ts: nil,
+                               ref: nil,
+                               timer: nil}}
   end
 
-  def disconnect(:reconnect, %{conn: conn} = state) do
+  def disconnect(:reconnect, %{conn: conn, timer: timer} = state) do
     :ok = :gun.close(conn)
-    {:connect, :init, %{state | conn: nil, ref: nil}}
+    {:ok, :cancel} = :timer.cancel(timer)
+
+    {:connect, :init, %{state | conn: nil,
+                                last_pong_ts: nil,
+                                ref: nil,
+                                timer: nil}}
   end
 
   def handle_call({:ws_send, msg}, _from, %{conn: conn, next_id: id} = state) do
     msg = msg |> Map.put(:id, id) |> Poison.encode!()
     :ok = :gun.ws_send(conn, {:text, msg})
+
     {:reply, :ok, %{state | next_id: id + 1}}
   end
 
@@ -139,12 +152,12 @@ defmodule Hedwig.Adapters.Slack.Connection do
   end
 
   def handle_info({:gun_down, _conn, :http, _reason, _, _} = msg, state) do
-    msg |> inspect |> info
+    msg |> inspect |> Logger.info
     {:disconnect, :reconnect, state}
   end
 
   def handle_info({:gun_down, _conn, :ws, _reason, _, _} = msg, state) do
-    msg |> inspect |> info
+    msg |> inspect |> Logger.info
     {:disconnect, :reconnect, state}
   end
 
@@ -152,18 +165,32 @@ defmodule Hedwig.Adapters.Slack.Connection do
     {:noreply, %{state | conn: conn}}
   end
 
-  def handle_info(:send_ping, %{conn: conn, next_id: id} = state) do
-    info "Sending ping"
-    msg = Poison.encode!(%{id: id, type: "ping"})
-    :ok = :gun.ws_send(conn, {:text, msg})
-    {:noreply, %{state | next_id: id + 1}}
+  def handle_info(:send_ping, %{conn: conn, last_pong_ts: ts, next_id: id} = state) do
+    now = unix_now
+
+    if now - (ts || now) > 60 do
+      Logger.error "Have not received 'pong' within 60 secs. Attempting to reconnect."
+      {:disconnect, :reconnect, state}
+    else
+      Logger.info "Sending ping"
+      msg = Poison.encode!(%{id: id, type: "ping"})
+      :ok = :gun.ws_send(conn, {:text, msg})
+
+      {:noreply, %{state | next_id: id + 1}}
+    end
   end
 
-  defp handle_data(%{"type" => "pong"}, _owner), do: :ok
+  def handle_info(:pong, state) do
+    {:noreply, %{state | last_pong_ts: unix_now}}
+  end
+
+  defp handle_data(%{"type" => "pong"} = msg, _owner) do
+    send(self(), :pong)
+  end
 
   defp handle_data(%{"type" => "hello"}, owner) do
     send(owner, :connection_ready)
-    info "Connected Successfully!"
+    Logger.info "Connected Successfully!"
   end
 
   defp handle_data(data, owner) do
@@ -175,5 +202,5 @@ defmodule Hedwig.Adapters.Slack.Connection do
   defp rtm_path(%{path: path, query: query, token: token}), do:
     '#{path}?#{URI.encode_query(Map.put(query, token: token))}'
 
-  defp info(msg), do: Logger.info("[hedwig_slack] #{msg}")
+  defp unix_now, do: :os.system_time(:seconds)
 end
