@@ -59,7 +59,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
           Logger.error "Unable to connect"
           {:backoff, @timeout, state}
         end
-      {:error, _} = error ->
+      {:error, _} ->
         {:backoff, @timeout, state}
     end
   end
@@ -80,7 +80,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
         :ok = :gun.close(conn)
 
         connect({:ws_upgrade, decoded["url"]}, %{state | conn: nil})
-      {:error, _} = error ->
+      {:error, _} ->
         {:backoff, @timeout, state}
     end
   end
@@ -102,7 +102,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
         after @timeout ->
           {:backoff, @timeout, state}
         end
-      {:error, _} = error ->
+      {:error, _} ->
         {:backoff, @timeout, state}
     end
   end
@@ -184,7 +184,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
     {:noreply, %{state | last_pong_ts: unix_now}}
   end
 
-  defp handle_data(%{"type" => "pong"} = msg, _owner) do
+  defp handle_data(%{"type" => "pong"}, _owner) do
     send(self(), :pong)
   end
 

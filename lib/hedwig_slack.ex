@@ -35,12 +35,12 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user} = msg, state) do
+  def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user}, state) do
     channels = put_channel_user(state.channels, channel, user)
     {:noreply, %{state | channels: channels}}
   end
 
-  def handle_info(%{"subtype" => "channel_leave", "channel" => channel, "user" => user} = msg, state) do
+  def handle_info(%{"subtype" => "channel_leave", "channel" => channel, "user" => user}, state) do
     channels = delete_channel_user(state.channels, channel, user)
     {:noreply, %{state | channels: channels}}
   end
