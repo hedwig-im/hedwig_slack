@@ -200,7 +200,7 @@ defmodule Hedwig.Adapters.Slack.Connection do
   defp rtm_path(%{path: path, query: nil, token: token}), do:
     '#{path}?token=#{token}'
   defp rtm_path(%{path: path, query: query, token: token}), do:
-    '#{path}?#{URI.encode_query(Map.put(query, token: token))}'
+    '#{path}?#{query |> Map.put(:token, token) |> URI.encode_query}'
 
   defp unix_now, do: :os.system_time(:seconds)
 end
