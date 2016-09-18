@@ -24,13 +24,13 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_cast({:reply, %{user: user, text: text} = msg}, %{conn: conn, users: users} = state) do
+  def handle_cast({:reply, %{user: user, text: text} = msg}, %{conn: conn, users: _users} = state) do
     msg = %{msg | text: "<@#{user.id}|#{user.name}>: #{text}"}
     Connection.ws_send(conn, slack_message(msg))
     {:noreply, state}
   end
 
-  def handle_cast({:emote, %{text: text} = msg}, %{conn: conn} = state) do
+  def handle_cast({:emote, %{text: _text} = msg}, %{conn: conn} = state) do
     Connection.ws_send(conn, slack_message(msg, %{subtype: "me_message"}))
     {:noreply, state}
   end
@@ -45,7 +45,7 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | channels: channels}}
   end
 
-  def handle_info(%{"type" => "message", "user" => user} = msg, %{conn: conn, robot: robot, users: users} = state) do
+  def handle_info(%{"type" => "message", "user" => user} = msg, %{conn: _conn, robot: robot, users: users} = state) do
     msg = %Hedwig.Message{
       ref: make_ref(),
       room: msg["channel"],
