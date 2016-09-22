@@ -10,20 +10,27 @@ defmodule HedwigSlack.Mixfile do
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     package: package,
+     package: package(),
      description: "A Slack adapter for Hedwig",
-     deps: deps]
+     deps: deps()]
   end
 
   def application do
-    [applications: [:logger, :connection, :gun, :hedwig, :poison]]
+    [mod: {HedwigSlack, []},
+     applications: [
+      :logger,
+      :hackney,
+      :hedwig,
+      :poison,
+      :websocket_client
+    ]]
   end
 
   defp deps do
-    [{:connection, "~> 1.0"},
-     {:gun, "1.0.0-pre.1"},
-     {:hedwig, github: "hedwig-im/hedwig"},
-     {:poison, "~> 2.0"}]
+    [{:hackney, "~> 1.6"},
+     {:hedwig, github: "hedwig-im/hedwig", ref: "a453847"},
+     {:poison, "~> 2.0"},
+     {:websocket_client, "~> 1.1"}]
   end
 
   defp package do
