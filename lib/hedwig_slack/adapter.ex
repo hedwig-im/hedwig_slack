@@ -45,6 +45,12 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
+
+  # Ignore all messages from the bot.
+  def handle_info(%{"user" => user}, %{id: user} = state) do
+    {:noreply, state}
+  end
+
   def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user}, state) do
     channels = put_channel_user(state.channels, channel, user)
     {:noreply, %{state | channels: channels}}
