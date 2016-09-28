@@ -5,7 +5,7 @@ defmodule HedwigSlack.Connection do
 
   require Logger
 
-  @keepalive 60_000
+  @keepalive 30_000
 
   defstruct next_id: 1, owner: nil, ref: nil
 
@@ -23,6 +23,18 @@ defmodule HedwigSlack.Connection do
 
   def ws_send(pid, msg) do
     send(pid, {:ws_send, msg})
+    :ok
+  end
+
+  def close(pid, timeout \\ 5000) do
+    send(pid, :close)
+    receive do
+      {:DOWN, _, :process, ^pid, _reason} ->
+        :ok
+    after timeout ->
+      true = Process.exit(pid, :kill)
+      :ok
+    end
   end
 
   ### :websocket_client callbacks ###
@@ -38,9 +50,7 @@ defmodule HedwigSlack.Connection do
 
   def ondisconnect(reason, state) do
     Logger.warn "Disconnected: #{inspect reason}"
-    # TODO: Tell the owner we're disconnected.
-    # It may be nice to allow the owner to determine if we should reconnect.
-    {:reconnect, state}
+    {:close, reason, state}
   end
 
   def websocket_handle({:text, data}, _ref, state) do
@@ -61,8 +71,12 @@ defmodule HedwigSlack.Connection do
     {:ok, state}
   end
 
-  def websocket_info({:DOWN, ref, :process, pid, reason}, _req, %{owner: pid, ref: ref} = state) do
-    {:stop, reason, state}
+  def websocket_info(:close, _req, state) do
+    {:close, <<>>, state}
+  end
+
+  def websocket_info({:DOWN, ref, :process, pid, _reason}, _req, %{owner: pid, ref: ref} = state) do
+    {:close, <<>>, state}
   end
 
   def websocket_info({:handle_data, data}, _req, %{owner: owner} = state) do

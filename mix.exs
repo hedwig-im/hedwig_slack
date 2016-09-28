@@ -8,6 +8,7 @@ defmodule HedwigSlack.Mixfile do
      name: "Hedwig Slack",
      version: @version,
      elixir: "~> 1.1",
+     elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      package: package(),
@@ -28,10 +29,16 @@ defmodule HedwigSlack.Mixfile do
 
   defp deps do
     [{:hackney, "~> 1.6"},
-     {:hedwig, github: "hedwig-im/hedwig", ref: "a453847"},
+     {:hedwig, github: "hedwig-im/hedwig", ref: "ea022ef"},
      {:poison, "~> 2.0"},
-     {:websocket_client, "~> 1.1"}]
+     {:websocket_client, "~> 1.1"},
+
+     # Test dependencies
+     {:bypass, "~> 0.5", only: :test}]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp package do
     [files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*"],
