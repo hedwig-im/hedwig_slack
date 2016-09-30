@@ -69,6 +69,7 @@ defmodule Hedwig.Adapters.Slack do
   def handle_info(%{"type" => "message", "user" => user} = msg, %{robot: robot, users: users} = state) do
     msg = %Hedwig.Message{
       ref: make_ref(),
+      robot: robot,
       room: msg["channel"],
       text: msg["text"],
       type: "message",
