@@ -80,7 +80,7 @@ defmodule Hedwig.Adapters.Slack do
     }
 
     if msg.text do
-      Hedwig.Robot.handle_message(robot, msg)
+      :ok = Hedwig.Robot.handle_in(robot, msg)
     end
 
     {:noreply, state}
