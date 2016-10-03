@@ -38,7 +38,7 @@ Add `hedwig_slack` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:hedwig_slack, "~> 0.1"}]
+  [{:hedwig_slack, github: "hedwig-im/hedwig_slack"}]
 end
 ```
 
