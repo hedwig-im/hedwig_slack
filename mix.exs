@@ -29,7 +29,7 @@ defmodule HedwigSlack.Mixfile do
 
   defp deps do
     [{:hackney, "~> 1.6"},
-     {:hedwig, github: "hedwig-im/hedwig", ref: "ea022ef"},
+     {:hedwig, github: "hedwig-im/hedwig"},
      {:poison, "~> 2.0"},
      {:websocket_client, "~> 1.1"},
 
