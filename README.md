@@ -103,8 +103,7 @@ config :alfred, Alfred.Robot,
   aka: "/",
   responders: [
     {Hedwig.Responders.Help, []},
-    {Hedwig.Responders.GreatSuccess, []},
-    {Hedwig.Responders.ShipIt, []}
+    {Hedwig.Responders.Ping, []}
   ]
 ```
 
@@ -136,8 +135,7 @@ config :alfred, Alfred.Robot,
   rooms: [],
   responders: [
     {Hedwig.Responders.Help, []},
-    {Hedwig.Responders.GreatSuccess, []},
-    {Hedwig.Responders.ShipIt, []}
+    {Hedwig.Responders.Ping, []}
   ]
 ```
 
