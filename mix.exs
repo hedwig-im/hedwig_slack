@@ -1,7 +1,7 @@
 defmodule HedwigSlack.Mixfile do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "1.0.0"
 
   def project do
     [app: :hedwig_slack,
@@ -29,8 +29,8 @@ defmodule HedwigSlack.Mixfile do
 
   defp deps do
     [{:hackney, "~> 1.6"},
-     {:hedwig, github: "hedwig-im/hedwig"},
-     {:poison, "~> 2.0"},
+     {:hedwig, "~> 1.0"},
+     {:poison, "~> 3.0"},
      {:websocket_client, "~> 1.1"},
 
      # Test dependencies
@@ -41,7 +41,7 @@ defmodule HedwigSlack.Mixfile do
   defp elixirc_paths(_), do: ["lib"]
 
   defp package do
-    [files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*"],
+    [files: ["lib", "mix.exs", "README*", "LICENSE*"],
      maintainers: ["Sonny Scroggin"],
      licenses: ["MIT"],
      links: %{
