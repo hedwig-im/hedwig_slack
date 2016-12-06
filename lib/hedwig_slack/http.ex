@@ -17,31 +17,40 @@ defmodule HedwigSlack.HTTP do
     do: request(:delete, path, opts)
 
   def request(method, path, opts \\ []) do
-    {query, opts} = Keyword.pop(opts, :query)
-    {req_headers, opts} = Keyword.pop(opts, :headers, [])
-    {req_body, opts} = Keyword.pop(opts, :body)
+    HTTPoison.start
 
-    url = url(path, query)
-    payload = if req_body, do: Poison.encode!(req_body), else: ""
-
-    with {:ok, status, headers, ref} <- :hackney.request(method, url, req_headers, payload, opts),
-         {:ok, body} <- :hackney.body(ref),
-         {:ok, decoded} <- Poison.decode(body) do
-      {:ok, %{status: status, headers: headers, body: decoded}}
+    with {query, opts} = Keyword.pop(opts, :query, []),
+         {req_headers, opts} = Keyword.pop(opts, :headers, []),
+         {req_body, _} <- Keyword.pop(opts, :body),
+         payload = encode(req_body),
+         url <- url(path, query),
+         {:ok, response} <- HTTPoison.request(method, url, payload, req_headers),
+         %HTTPoison.Response{status_code: status, headers: headers, body: body} <- response do
+      {:ok, %{status: status, headers: headers, body: Poison.decode!(body)}}
     else
-      {:error, _} = error ->
-        error
-      error ->
-        error
+      {:error, %HTTPoison.Error{reason: reason}} -> {:error, reason}
     end
   end
 
+  def form_post(path, body) do
+    request :post, path, [body: {:form, Map.to_list(body)}]
+  end
+
+  defp encode(nil), do: ""
+  defp encode(data) when is_map(data), do: Poison.encode!(data)
+  defp encode(data) when is_binary(data), do: Poison.encode!(data)
+  defp encode(data) when is_tuple(data), do: data
+  defp encode(data) do
+    IO.inspect data
+  end
+
   defp url(path, query) do
-    endpoint = Application.get_env(:hedwig_slack, :endpoint, @endpoint)
     uri = URI.parse(endpoint)
     query = encode_query(query)
     to_string(%{uri | path: uri.path <> path, query: query})
   end
+
+  defp endpoint, do: Application.get_env(:hedwig_slack, :endpoint, @endpoint)
 
   defp encode_query(nil), do: nil
   defp encode_query(enum), do: URI.encode_query(enum)

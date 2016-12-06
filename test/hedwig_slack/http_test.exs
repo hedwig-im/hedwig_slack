@@ -1,7 +1,7 @@
 defmodule HedwigSlack.HTTPTest do
   use ExUnit.Case
 
-  import Plug.Conn
+  import Plug.Conn, only: [get_req_header: 2, read_body: 1, resp: 3]
 
   alias HedwigSlack.HTTP
 
@@ -30,6 +30,7 @@ defmodule HedwigSlack.HTTPTest do
         assert conn.method == "POST"
         assert conn.request_path == "/api/rtm.start"
         assert conn.query_string == "token=#{token}"
+        assert get_req_header(conn, "content-type") == ["application/octet-stream"]
         {:ok, ~s({"data":123}), conn} = read_body(conn)
 
         resp(conn, 201, ~s({"ok":true}))
@@ -83,6 +84,21 @@ defmodule HedwigSlack.HTTPTest do
       end
 
       {:ok, %{status: 200, body: body}} = HTTP.delete("/rtm.start", query: [token: token])
+      assert %{"ok" => true} == body
+    end
+
+    test "form_post/2", %{server: server} do
+      token = "abc123"
+
+      Bypass.expect server, fn conn ->
+        assert conn.method == "POST"
+        assert conn.request_path == "/api/chat.postMessage"
+        assert conn.query_string == ""
+        assert get_req_header(conn, "content-type") == ["application/x-www-form-urlencoded; charset=utf-8"]
+        resp(conn, 200, ~s({"ok":true}))
+      end
+
+      {:ok, %{status: 200, body: body}} = HTTP.form_post("/chat.postMessage", %{token: token})
       assert %{"ok" => true} == body
     end
   end

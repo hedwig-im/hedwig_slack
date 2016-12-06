@@ -20,7 +20,7 @@ defmodule HedwigSlack.Mixfile do
     [mod: {HedwigSlack, []},
      applications: [
       :logger,
-      :hackney,
+      :httpoison,
       :hedwig,
       :poison,
       :websocket_client
@@ -28,8 +28,8 @@ defmodule HedwigSlack.Mixfile do
   end
 
   defp deps do
-    [{:hackney, "~> 1.6"},
-     {:hedwig, "~> 1.0"},
+    [{:httpoison, "~> 0.10.0"},
+     {:hedwig, path: "../hedwig"},
      {:poison, "~> 3.0"},
      {:websocket_client, "~> 1.1"},
 

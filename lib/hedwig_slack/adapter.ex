@@ -3,8 +3,10 @@ defmodule Hedwig.Adapters.Slack do
 
   require Logger
 
-  alias HedwigSlack.{Connection, RTM}
+  alias HedwigSlack.{Connection, RTM, WebAPI}
 
+  @userid_pattern ~r/<@(?<target>\w+)>/i
+  
   defmodule State do
     defstruct conn: nil,
               conn_ref: nil,
@@ -24,8 +26,31 @@ defmodule Hedwig.Adapters.Slack do
     {:ok, %State{opts: opts, robot: robot, token: token}}
   end
 
+  def handle_cast({:send, %{text: text, room: room, private: %{identity: %{name: _} = identity}}}, %{token: token} = state) do
+    slack_params = %{
+      "name": "username",
+      "emoji": "icon_emoji",
+      "thumbnail": "icon_url"}
+
+    override = identity
+      |> Enum.filter(fn {_, v} -> v != nil end)
+      |> Enum.map(fn {k, v} -> {slack_params[k], v} end)
+      |> Enum.into(%{})
+
+    %{token: token, as_user: false, text: text, channel: room}
+    |> Map.merge(override)
+    |> WebAPI.chat_postmessage
+
+    {:noreply, state}
+  end
+
   def handle_cast({:send, msg}, %{conn: conn} = state) do
-    Connection.ws_send(conn, slack_message(msg))
+    # Post w/ user IDs via Web API instead of RTC
+    if Regex.match?(@userid_pattern, msg.text) do
+      WebAPI.chat_postmessage %{token: state.token, text: msg.text, channel: msg.room}
+    else
+      Connection.ws_send(conn, slack_message(msg))
+    end
     {:noreply, state}
   end
 
@@ -35,8 +60,14 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_cast({:emote, %{text: _text} = msg}, %{conn: conn} = state) do
-    Connection.ws_send(conn, slack_message(msg, %{subtype: "me_message"}))
+  
+  def handle_cast({:emote, %{text: text, room: room} = msg}, %{conn: conn, token: token} = state) do
+    # Emote w/ user IDs via RTC instead of Web API - https://twitter.com/slackapi/status/553700205090988033
+    if Regex.match?(@userid_pattern, text) do
+      Connection.ws_send(conn, slack_message(msg, %{subtype: "me_message"}))
+    else
+      IO.inspect WebAPI.chat_memessage %{token: token, text: text, channel: room}
+    end
     {:noreply, state}
   end
 
@@ -131,6 +162,8 @@ defmodule Hedwig.Adapters.Slack do
   def terminate(_reason, _state) do
     :ok
   end
+
+  def userid_pattern, do: @userid_pattern
 
   defp handle_network_failure(reason, %{robot: robot} = state) do
     case Hedwig.Robot.handle_disconnect(robot, reason) do
