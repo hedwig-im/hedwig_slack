@@ -3,7 +3,7 @@ defmodule Hedwig.Adapters.Slack do
 
   require Logger
 
-  alias HedwigSlack.{Connection, RTM}
+  alias HedwigSlack.{Connection, RTM, User}
 
   defmodule State do
     defstruct conn: nil,
@@ -20,7 +20,7 @@ defmodule Hedwig.Adapters.Slack do
 
   def init({robot, opts}) do
     {token, opts} = Keyword.pop(opts, :token)
-    Kernel.send(self(), :rtm_start)
+    GenServer.cast(self(), :fetch_user_list)
     {:ok, %State{opts: opts, robot: robot, token: token}}
   end
 
@@ -40,10 +40,24 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_info(:rtm_start, %{token: token} = state) do
-    case RTM.start(token) do
+  def handle_cast({:users, users}, %{users: {pid, ref}} = state) do
+    true = Process.demonitor(ref)
+    GenServer.stop(pid)
+    GenServer.cast(self(), :rtm_connect)
+    {:noreply, %{state | users: reduce(users["members"], %{})}}
+  end
+
+  def handle_cast(:fetch_user_list, %{opts: opts, token: token} = state) do
+    http_opts = Keyword.get(opts, :recv_timeout, @default_recv_timeout)
+    {:ok, pid, ref} = User.list(token, http_opts)
+
+    {:noreply, %{state | users: {pid, ref}}}
+  end
+
+  def handle_cast(:rtm_connect, %{token: token} = state) do
+    case RTM.connect(token) do
       {:ok, %{body: data}} ->
-        handle_rtm_data(data)
+        Kernel.send(self(), {:self, data["self"]})
         {:ok, conn, ref} = Connection.start(data["url"])
         {:noreply, %State{state | conn: conn, conn_ref: ref}}
       {:error, _} = error ->
@@ -56,15 +70,15 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user}, state) do
-    channels = put_channel_user(state.channels, channel, user)
-    {:noreply, %{state | channels: channels}}
-  end
+  #def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user}, state) do
+    #channels = put_channel_user(state.channels, channel, user)
+    #{:noreply, %{state | channels: channels}}
+  #end
 
-  def handle_info(%{"subtype" => "channel_leave", "channel" => channel, "user" => user}, state) do
-    channels = delete_channel_user(state.channels, channel, user)
-    {:noreply, %{state | channels: channels}}
-  end
+  #def handle_info(%{"subtype" => "channel_leave", "channel" => channel, "user" => user}, state) do
+    #channels = delete_channel_user(state.channels, channel, user)
+    #{:noreply, %{state | channels: channels}}
+  #end
 
   def handle_info(%{"type" => "message", "user" => user} = msg, %{robot: robot, users: users} = state) do
     msg = %Hedwig.Message{
@@ -86,27 +100,23 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, state}
   end
 
-  def handle_info({:channels, channels}, state) do
-    {:noreply, %{state | channels: reduce(channels, state.channels)}}
-  end
+  #def handle_info({:channels, channels}, state) do
+    #{:noreply, %{state | channels: reduce(channels, state.channels)}}
+  #end
 
-  def handle_info({:groups, groups}, state) do
-    {:noreply, %{state | groups: reduce(groups, state.groups)}}
-  end
+  #def handle_info({:groups, groups}, state) do
+    #{:noreply, %{state | groups: reduce(groups, state.groups)}}
+  #end
 
   def handle_info({:self, %{"id" => id, "name" => name}}, state) do
     {:noreply, %{state | id: id, name: name}}
-  end
-
-  def handle_info({:users, users}, state) do
-    {:noreply, %{state | users: reduce(users, state.users)}}
   end
 
   def handle_info(%{"type" => "team_join", "user" => user}, state) do
     {:noreply, %{state | users: reduce([user], state.users)}}
   end
 
-  def handle_info(%{"presence" => presence, "type" => "presence_change", "user" => user}, state) do
+  def handle_cast(%{"presence" => presence, "type" => "presence_change", "user" => user}, %{ref: nil} = state) do
     users = update_in(state.users, [user], &Map.put(&1, "presence", presence))
     {:noreply, %{state | users: users}}
   end
@@ -171,12 +181,5 @@ defmodule Hedwig.Adapters.Slack do
               id: nil,
               name: nil,
               users: %{}}
-  end
-
-  defp handle_rtm_data(data) do
-    Kernel.send(self(), {:channels, data["channels"]})
-    Kernel.send(self(), {:groups, data["groups"]})
-    Kernel.send(self(), {:self, data["self"]})
-    Kernel.send(self(), {:users, data["users"]})
   end
 end

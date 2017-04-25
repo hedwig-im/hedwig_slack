@@ -1,5 +1,6 @@
 defmodule HedwigSlack.HTTP do
   @endpoint "https://slack.com/api"
+  @default_recv_timeout 60_000
 
   def get(path, opts \\ []),
     do: request(:get, path, opts)
@@ -20,6 +21,10 @@ defmodule HedwigSlack.HTTP do
     {query, opts} = Keyword.pop(opts, :query)
     {req_headers, opts} = Keyword.pop(opts, :headers, [])
     {req_body, opts} = Keyword.pop(opts, :body)
+
+    opts =
+      opts
+      |> Keyword.put_new(:recv_timeout, @default_recv_timeout)
 
     url = url(path, query)
     payload = if req_body, do: Poison.encode!(req_body), else: ""

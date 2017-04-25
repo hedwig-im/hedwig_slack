@@ -5,7 +5,7 @@ defmodule HedwigSlack.RTMTest do
 
   alias HedwigSlack.RTM
 
-  describe "rtm.start" do
+  describe "rtm.connect" do
     setup :setup_endpoint
 
     test "returns data when success", %{server: server} do
@@ -13,19 +13,19 @@ defmodule HedwigSlack.RTMTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "GET"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
 
         resp(conn, 200, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 200, body: body}} = RTM.start(token)
+      {:ok, %{status: 200, body: body}} = RTM.connect(token)
       assert %{"ok" => true} == body
     end
 
     test "returns error when server is down", %{server: server} do
       :ok = Bypass.down(server)
-      assert {:error, :econnrefused} = RTM.start("token")
+      assert {:error, :econnrefused} = RTM.connect("token")
     end
 
     test "returns error when server goes down in-flight", %{server: server} do
@@ -33,7 +33,7 @@ defmodule HedwigSlack.RTMTest do
         :ok = Bypass.pass(server)
         :ok = Bypass.down(server)
       end
-      assert {:error, :closed} = RTM.start("token")
+      assert {:error, :closed} = RTM.connect("token")
     end
   end
 

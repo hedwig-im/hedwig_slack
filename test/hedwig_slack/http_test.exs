@@ -13,13 +13,13 @@ defmodule HedwigSlack.HTTPTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "GET"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
 
         resp(conn, 200, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 200, body: body}} = HTTP.get("/rtm.start", query: [token: token])
+      {:ok, %{status: 200, body: body}} = HTTP.get("/rtm.connect", query: [token: token])
       assert %{"ok" => true} == body
     end
 
@@ -28,14 +28,14 @@ defmodule HedwigSlack.HTTPTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "POST"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
         {:ok, ~s({"data":123}), conn} = read_body(conn)
 
         resp(conn, 201, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 201, body: body}} = HTTP.post("/rtm.start", query: [token: token], body: %{"data" => 123})
+      {:ok, %{status: 201, body: body}} = HTTP.post("/rtm.connect", query: [token: token], body: %{"data" => 123})
       assert %{"ok" => true} == body
     end
 
@@ -44,14 +44,14 @@ defmodule HedwigSlack.HTTPTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "PUT"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
         {:ok, ~s({"data":123}), conn} = read_body(conn)
 
         resp(conn, 200, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 200, body: body}} = HTTP.put("/rtm.start", query: [token: token], body: %{"data" => 123})
+      {:ok, %{status: 200, body: body}} = HTTP.put("/rtm.connect", query: [token: token], body: %{"data" => 123})
       assert %{"ok" => true} == body
     end
 
@@ -60,14 +60,14 @@ defmodule HedwigSlack.HTTPTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "PATCH"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
         {:ok, ~s({"data":123}), conn} = read_body(conn)
 
         resp(conn, 200, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 200, body: body}} = HTTP.patch("/rtm.start", query: [token: token], body: %{"data" => 123})
+      {:ok, %{status: 200, body: body}} = HTTP.patch("/rtm.connect", query: [token: token], body: %{"data" => 123})
       assert %{"ok" => true} == body
     end
 
@@ -76,13 +76,13 @@ defmodule HedwigSlack.HTTPTest do
 
       Bypass.expect server, fn conn ->
         assert conn.method == "DELETE"
-        assert conn.request_path == "/api/rtm.start"
+        assert conn.request_path == "/api/rtm.connect"
         assert conn.query_string == "token=#{token}"
 
         resp(conn, 200, ~s({"ok":true}))
       end
 
-      {:ok, %{status: 200, body: body}} = HTTP.delete("/rtm.start", query: [token: token])
+      {:ok, %{status: 200, body: body}} = HTTP.delete("/rtm.connect", query: [token: token])
       assert %{"ok" => true} == body
     end
   end
