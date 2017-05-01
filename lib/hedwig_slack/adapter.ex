@@ -147,10 +147,10 @@ defmodule Hedwig.Adapters.Slack do
       {:disconnect, reason} ->
         {:stop, reason, state}
       {:reconnect, timeout} ->
-        Process.send_after(self(), :rtm_start, timeout)
+        Process.send_after(self(), :rtm_connect, timeout)
         {:noreply, reset_state(state)}
       :reconnect ->
-        Kernel.send(self(), :rtm_start)
+        Kernel.send(self(), :rtm_connect)
         {:noreply, reset_state(state)}
     end
   end
