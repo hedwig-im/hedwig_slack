@@ -43,7 +43,7 @@ defmodule Hedwig.Adapters.Slack do
   def handle_cast({:users, users}, %{users: {pid, ref}} = state) do
     true = Process.demonitor(ref)
     GenServer.stop(pid)
-    GenServer.cast(self(), :rtm_connect)
+    Kernel.send(self(), :rtm_connect)
     {:noreply, %{state | users: reduce(users["members"], %{})}}
   end
 
@@ -54,7 +54,7 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | users: {pid, ref}}}
   end
 
-  def handle_cast(:rtm_connect, %{token: token} = state) do
+  def handle_info(:rtm_connect, %{token: token} = state) do
     case RTM.connect(token) do
       {:ok, %{body: data}} ->
         Kernel.send(self(), {:self, data["self"]})
