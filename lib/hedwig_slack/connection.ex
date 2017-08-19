@@ -18,7 +18,7 @@ defmodule HedwigSlack.Connection do
   end
 
   def start_link(url, owner) do
-    :websocket_client.start_link(to_char_list(url), __MODULE__, owner)
+    :websocket_client.start_link(to_charlist(url), __MODULE__, owner)
   end
 
   def ws_send(pid, msg) do
