@@ -2,6 +2,8 @@
 
 > A Slack Adapter for [Hedwig](https://github.com/hedwig-im/hedwig)
 
+[![Build Status](https://www.travis-ci.org/hedwig-im/hedwig_slack.svg?branch=master)](https://www.travis-ci.org/hedwig-im/hedwig_slack)
+
 ## Getting started
 
 Let's generate a new Elixir application with a supervision tree:
