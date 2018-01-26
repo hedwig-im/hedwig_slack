@@ -22,11 +22,11 @@ defmodule HedwigSlack.HTTP do
     {req_body, opts} = Keyword.pop(opts, :body)
 
     url = url(path, query)
-    payload = if req_body, do: Poison.encode!(req_body), else: ""
+    payload = if req_body, do: Jason.encode!(req_body), else: ""
 
     with {:ok, status, headers, ref} <- :hackney.request(method, url, req_headers, payload, opts),
          {:ok, body} <- :hackney.body(ref),
-         {:ok, decoded} <- Poison.decode(body) do
+         {:ok, decoded} <- Jason.decode(body) do
       {:ok, %{status: status, headers: headers, body: decoded}}
     else
       {:error, _} = error ->

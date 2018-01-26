@@ -80,7 +80,7 @@ defmodule HedwigSlack.Connection do
   end
 
   def websocket_info({:handle_data, data}, _req, %{owner: owner} = state) do
-    data = Poison.decode!(data)
+    data = Jason.decode!(data)
     Logger.debug "INCOMING > #{inspect data}"
     send(owner, data)
 
@@ -90,7 +90,7 @@ defmodule HedwigSlack.Connection do
   def websocket_info({:ws_send, msg}, _from, %{next_id: id} = state) do
     msg = Map.put(msg, :id, id)
     Logger.debug "OUTGOING > #{inspect msg}"
-    msg = Poison.encode!(msg)
+    msg = Jason.encode!(msg)
 
     {:reply, {:text, msg}, %{state | next_id: id + 1}}
   end

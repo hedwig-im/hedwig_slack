@@ -43,7 +43,7 @@ defmodule HedwigSlack.WebSocketServer do
   end
 
   def websocket_handle({:text, msg}, req, state) do
-    %{"id" => id} = Poison.decode!(msg)
+    %{"id" => id} = Jason.decode!(msg)
     {:reply, {:text, ~s({"ok":true,"reply_to":#{id}})}, req, state}
   end
 

@@ -22,7 +22,7 @@ defmodule HedwigSlack.Mixfile do
       :logger,
       :hackney,
       :hedwig,
-      :poison,
+      :jason,
       :websocket_client
     ]]
   end
@@ -30,7 +30,7 @@ defmodule HedwigSlack.Mixfile do
   defp deps do
     [{:hackney, "~> 1.9"},
      {:hedwig, "~> 1.0"},
-     {:poison, "~> 3.0"},
+     {:jason, "~> 1.0"},
      {:websocket_client, "~> 1.3"},
 
      # Test dependencies
