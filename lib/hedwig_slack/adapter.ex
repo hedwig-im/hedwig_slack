@@ -146,7 +146,7 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   defp slack_message(%Hedwig.Message{} = msg, overrides \\ %{}) do
-    Map.merge(%{channel: msg.room, text: msg.text, type: msg.type}, overrides)
+    Map.merge(%{channel: msg.room, text: msg.text, type: msg.type, thread_ts: msg.thread_ts}, overrides)
   end
 
   defp put_channel_user(channels, channel_id, user_id) do
