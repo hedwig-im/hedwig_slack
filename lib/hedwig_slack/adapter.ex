@@ -72,6 +72,8 @@ defmodule Hedwig.Adapters.Slack do
       robot: robot,
       room: msg["channel"],
       text: msg["text"],
+      ts: msg["ts"],
+      thread_ts: msg["thread_ts"],
       type: "message",
       user: %Hedwig.User{
         id: user,

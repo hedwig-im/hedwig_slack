@@ -29,7 +29,7 @@ defmodule HedwigSlack.Mixfile do
 
   defp deps do
     [{:hackney, "~> 1.9"},
-     {:hedwig, github: "kevinmcnamee/hedwig", branch: "adds_thread_to_messages"},
+     {:hedwig, github: "kevinmcnamee/hedwig", branch: "adds-threads-to-message"},
      {:jason, "~> 1.0"},
      {:websocket_client, "~> 1.3"},
 
