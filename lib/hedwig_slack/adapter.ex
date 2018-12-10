@@ -71,8 +71,6 @@ defmodule Hedwig.Adapters.Slack do
         %{"type" => "message", "user" => user} = msg,
         %{robot: robot, users: users} = state
       ) do
-    IO.inspect("HELLO FROM HANDLE INFO ------- MESSAGE")
-
     msg = %Hedwig.Message{
       ref: make_ref(),
       robot: robot,
@@ -98,16 +96,15 @@ defmodule Hedwig.Adapters.Slack do
         %{"type" => "reaction_added", "user" => user} = msg,
         %{robot: robot, users: users} = state
       ) do
-    IO.inspect("HELLO FROM HANDLE INFO ------ REACTION")
-
     msg = %Hedwig.Message{
       ref: make_ref(),
       robot: robot,
-      room: msg["channel"],
+      room: msg["item"]["channel"],
       text: msg["reaction"],
       ts: msg["ts"],
       thread_ts: msg["thread_ts"],
       type: "reaction_added",
+      private: msg,
       user: %Hedwig.User{
         id: user,
         name: users[user]["name"]
@@ -182,7 +179,10 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   defp slack_message(%Hedwig.Message{} = msg, overrides \\ %{}) do
-    Map.merge(%{channel: msg.room, text: msg.text, type: msg.type}, overrides)
+    Map.merge(
+      %{channel: msg.room, text: msg.text, type: msg.type, thread_ts: msg.thread_ts},
+      overrides
+    )
   end
 
   defp put_channel_user(channels, channel_id, user_id) do
