@@ -3,7 +3,7 @@ defmodule Hedwig.Adapters.Slack do
 
   require Logger
 
-  alias HedwigSlack.{Connection, RTM}
+  alias HedwigSlack.{Connection, RTM, ChatPostMessage}
 
   defmodule State do
     defstruct conn: nil,
@@ -25,13 +25,26 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   def handle_cast({:send, msg}, %{conn: conn} = state) do
-    Connection.ws_send(conn, slack_message(msg))
+    case msg.text do
+      %{attachments: attachments} -> 
+        ChatPostMessage.post(state.token, msg.room, attachments)
+      _ ->
+        Connection.ws_send(conn, slack_message(msg))
+    end
     {:noreply, state}
   end
 
   def handle_cast({:reply, %{user: user, text: text} = msg}, %{conn: conn, users: _users} = state) do
-    msg = %{msg | text: "<@#{user.id}|#{user.name}>: #{text}"}
-    Connection.ws_send(conn, slack_message(msg))
+    case msg.text do
+      %{attachments: %{text: text} = attachments} ->
+        attachments = %{attachments | text: "<@#{user.id}|#{user.name}>: #{text}"}
+        ChatPostMessage.post(state.token, msg.room, attachments)
+      %{attachments: attachments} ->
+        ChatPostMessage.post(state.token, msg.room, attachments)
+      _ ->
+        msg = %{msg | text: "<@#{user.id}|#{user.name}>: #{text}"}
+        Connection.ws_send(conn, slack_message(msg))
+    end
     {:noreply, state}
   end
 
