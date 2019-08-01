@@ -28,6 +28,8 @@ defmodule Hedwig.Adapters.Slack do
     case msg.text do
       %{attachments: attachments} -> 
         ChatPostMessage.post(state.token, msg.room, attachments)
+      %{blocks: blocks} ->
+        ChatPostMessage.post(state.token, msg.room, blocks)
       _ ->
         Connection.ws_send(conn, slack_message(msg))
     end
@@ -41,6 +43,8 @@ defmodule Hedwig.Adapters.Slack do
         ChatPostMessage.post(state.token, msg.room, attachments)
       %{attachments: attachments} ->
         ChatPostMessage.post(state.token, msg.room, attachments)
+      %{blocks: blocks} ->
+        ChatPostMessage.post(state.token, msg.room, blocks)
       _ ->
         msg = %{msg | text: "<@#{user.id}|#{user.name}>: #{text}"}
         Connection.ws_send(conn, slack_message(msg))
