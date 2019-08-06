@@ -46,15 +46,16 @@ defmodule Hedwig.Adapters.Slack do
         handle_rtm_data(data)
         {:ok, conn, ref} = Connection.start(data["url"])
         {:noreply, %State{state | conn: conn, conn_ref: ref}}
+
       {:error, _} = error ->
         handle_network_failure(error, state)
     end
   end
 
   # Ignore all messages from the bot.
-  def handle_info(%{"user" => user}, %{id: user} = state) do
-    {:noreply, state}
-  end
+  # def handle_info(%{"user" => user}, %{id: user} = state) do
+    # {:noreply, state}
+  # end
 
   def handle_info(%{"subtype" => "channel_join", "channel" => channel, "user" => user}, state) do
     channels = put_channel_user(state.channels, channel, user)
@@ -66,13 +67,44 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | channels: channels}}
   end
 
-  def handle_info(%{"type" => "message", "user" => user} = msg, %{robot: robot, users: users} = state) do
+  def handle_info(
+        %{"type" => "message", "user" => user} = msg,
+        %{robot: robot, users: users} = state
+      ) do
     msg = %Hedwig.Message{
       ref: make_ref(),
       robot: robot,
       room: msg["channel"],
       text: msg["text"],
+      ts: msg["ts"],
+      thread_ts: msg["thread_ts"],
       type: "message",
+      user: %Hedwig.User{
+        id: user,
+        name: users[user]["name"]
+      }
+    }
+
+    if msg.text do
+      :ok = Hedwig.Robot.handle_in(robot, msg)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_info(
+        %{"type" => "reaction_added", "user" => user} = msg,
+        %{robot: robot, users: users} = state
+      ) do
+    msg = %Hedwig.Message{
+      ref: make_ref(),
+      robot: robot,
+      room: msg["item"]["channel"],
+      text: msg["reaction"],
+      ts: msg["ts"],
+      thread_ts: msg["thread_ts"],
+      type: "reaction_added",
+      private: msg,
       user: %Hedwig.User{
         id: user,
         name: users[user]["name"]
@@ -111,8 +143,7 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | users: users}}
   end
 
-  def handle_info(%{"type" => "reconnect_url"}, state), do:
-    {:noreply, state}
+  def handle_info(%{"type" => "reconnect_url"}, state), do: {:noreply, state}
 
   def handle_info(%{"type" => "hello"}, %{robot: robot} = state) do
     Hedwig.Robot.handle_connect(robot)
@@ -136,9 +167,11 @@ defmodule Hedwig.Adapters.Slack do
     case Hedwig.Robot.handle_disconnect(robot, reason) do
       {:disconnect, reason} ->
         {:stop, reason, state}
+
       {:reconnect, timeout} ->
         Process.send_after(self(), :rtm_start, timeout)
         {:noreply, reset_state(state)}
+
       :reconnect ->
         Kernel.send(self(), :rtm_start)
         {:noreply, reset_state(state)}
@@ -146,11 +179,14 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   defp slack_message(%Hedwig.Message{} = msg, overrides \\ %{}) do
-    Map.merge(%{channel: msg.room, text: msg.text, type: msg.type}, overrides)
+    Map.merge(
+      %{channel: msg.room, text: msg.text, type: msg.type, thread_ts: msg.thread_ts},
+      overrides
+    )
   end
 
   defp put_channel_user(channels, channel_id, user_id) do
-    update_in(channels, [channel_id, "members"], &([user_id | &1]))
+    update_in(channels, [channel_id, "members"], &[user_id | &1])
   end
 
   defp delete_channel_user(channels, channel_id, user_id) do
@@ -164,13 +200,16 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   defp reset_state(state) do
-    %{state | conn: nil,
-              conn_ref: nil,
-              channels: %{},
-              groups: %{},
-              id: nil,
-              name: nil,
-              users: %{}}
+    %{
+      state
+      | conn: nil,
+        conn_ref: nil,
+        channels: %{},
+        groups: %{},
+        id: nil,
+        name: nil,
+        users: %{}
+    }
   end
 
   defp handle_rtm_data(data) do
