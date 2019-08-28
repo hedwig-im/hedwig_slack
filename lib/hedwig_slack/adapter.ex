@@ -27,9 +27,9 @@ defmodule Hedwig.Adapters.Slack do
   def handle_cast({:send, msg}, %{conn: conn} = state) do
     case msg.text do
       %{attachments: attachments} -> 
-        ChatPostMessage.post(state.token, msg.room, attachments)
+        ChatPostMessage.post(state.token, msg.room, attachments: attachments)
       %{blocks: blocks} ->
-        ChatPostMessage.post(state.token, msg.room, blocks)
+        ChatPostMessage.post(state.token, msg.room, blocks: blocks)
       _ ->
         Connection.ws_send(conn, slack_message(msg))
     end
