@@ -93,6 +93,31 @@ defmodule Hedwig.Adapters.Slack do
   end
 
   def handle_info(
+        %{"type" => "message", "bot_id" => bot_id, "username" => bot_username} = msg,
+        %{robot: robot, users: users} = state
+      ) do
+    msg = %Hedwig.Message{
+      ref: make_ref(),
+      robot: robot,
+      room: msg["channel"],
+      text: msg["text"],
+      ts: msg["ts"],
+      thread_ts: msg["thread_ts"],
+      type: "message",
+      user: %Hedwig.User{
+        id: bot_id,
+        name: bot_username
+      }
+    }
+
+    if msg.text do
+      :ok = Hedwig.Robot.handle_in(robot, msg)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_info(
         %{"type" => "reaction_added", "user" => user} = msg,
         %{robot: robot, users: users} = state
       ) do
